@@ -1,0 +1,6 @@
+{
+  "name": "Language Partner",
+  "description": "Real-time language learning conversational AI partner with live feedback, grammar metrics, speech-to-speech, and personalized vocabulary building.",
+  "requestFramePermissions": ["microphone"],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
