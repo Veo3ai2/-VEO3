@@ -74,7 +74,7 @@ fun PartnerSelectorScreen(
                         .padding(horizontal = 8.dp, vertical = 4.dp)
                 ) {
                     Text(
-                        text = "LIVE",
+                        text = "مباشر",
                         color = Color.Black,
                         fontSize = 11.sp,
                         fontWeight = FontWeight.Black,
@@ -84,15 +84,15 @@ fun PartnerSelectorScreen(
                 Spacer(modifier = Modifier.width(12.dp))
                 Column {
                     Text(
-                        text = "PARTNER CATALOG / V.2",
+                        text = "دليل الشركاء",
                         color = BrandLime,
-                        fontSize = 10.sp,
+                        fontSize = 11.sp,
                         fontWeight = FontWeight.Bold,
                         fontFamily = FontFamily.Monospace,
-                        letterSpacing = 2.sp
+                        letterSpacing = 1.sp
                     )
                     Text(
-                        text = "Select Your Conversational Partner",
+                        text = "اختر شريك المحادثة للممارسة",
                         color = TextPrimary,
                         fontSize = 18.sp,
                         fontWeight = FontWeight.Black
@@ -234,10 +234,9 @@ fun PartnerSelectorScreen(
                             )
                             Spacer(modifier = Modifier.width(6.dp))
                             Text(
-                                text = "TOPICS:",
-                                fontSize = 9.sp,
+                                text = "المواضيع:",
+                                fontSize = 10.sp,
                                 fontWeight = FontWeight.Bold,
-                                fontFamily = FontFamily.Monospace,
                                 color = if (isSelected) Color.Black.copy(alpha = 0.7f) else TextSecondary
                             )
                             Spacer(modifier = Modifier.width(8.dp))

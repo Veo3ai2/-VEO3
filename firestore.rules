@@ -1,0 +1,67 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+
+    function isOwner(userId) {
+      return isAuthenticated() && request.auth.uid == userId;
+    }
+
+    function isValidUserProfile(data) {
+      return data.userId == request.auth.uid &&
+        data.streak is int && data.streak >= 0 &&
+        data.totalMessagesSent is int && data.totalMessagesSent >= 0 &&
+        data.grammarAccuracyScore is int && data.grammarAccuracyScore >= 0 && data.grammarAccuracyScore <= 100 &&
+        data.dailyMessageGoal is int && data.dailyMessageGoal >= 1 && data.dailyMessageGoal <= 100 &&
+        data.todayMessagesSent is int && data.todayMessagesSent >= 0 &&
+        (!('dailyVocabGoal' in data) || (data.dailyVocabGoal is int && data.dailyVocabGoal >= 1 && data.dailyVocabGoal <= 100)) &&
+        (!('todayVocabAdded' in data) || (data.todayVocabAdded is int && data.todayVocabAdded >= 0)) &&
+        (!('lastActiveDate' in data) || data.lastActiveDate is string || data.lastActiveDate == null);
+    }
+
+    function isValidVocabItem(data, userId) {
+      return data.userId == userId &&
+        data.id is string && data.id.size() > 0 &&
+        data.word is string && data.word.size() > 0 && data.word.size() <= 200 &&
+        data.translation is string && data.translation.size() > 0 && data.translation.size() <= 500 &&
+        data.languageName is string &&
+        data.context is string &&
+        (!('notes' in data) || data.notes is string || data.notes == null);
+    }
+
+    function isValidChatMessage(data, userId) {
+      return data.userId == userId &&
+        data.id is string && data.id.size() > 0 &&
+        data.partnerId is string && data.partnerId.size() > 0 &&
+        (data.role == 'user' || data.role == 'partner') &&
+        data.text is string && data.text.size() > 0 &&
+        (!('grammarCorrect' in data) || data.grammarCorrect is bool || data.grammarCorrect == null) &&
+        (!('correctedText' in data) || data.correctedText is string || data.correctedText == null) &&
+        (!('explanation' in data) || data.explanation is string || data.explanation == null);
+    }
+
+    match /users/{userId} {
+      allow read: if isOwner(userId);
+      allow create: if isOwner(userId) && isValidUserProfile(request.resource.data);
+      allow update: if isOwner(userId) && isValidUserProfile(request.resource.data);
+      allow delete: if isOwner(userId);
+
+      match /vocab/{vocabId} {
+        allow read: if isOwner(userId);
+        allow create: if isOwner(userId) && isValidVocabItem(request.resource.data, userId);
+        allow update: if isOwner(userId) && isValidVocabItem(request.resource.data, userId);
+        allow delete: if isOwner(userId);
+      }
+
+      match /chat_messages/{messageId} {
+        allow read: if isOwner(userId);
+        allow create: if isOwner(userId) && isValidChatMessage(request.resource.data, userId);
+        allow update: if isOwner(userId) && isValidChatMessage(request.resource.data, userId);
+        allow delete: if isOwner(userId);
+      }
+    }
+  }
+}

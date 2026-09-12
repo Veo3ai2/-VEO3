@@ -1,5 +1,6 @@
 package com.example.languagepartner.data.local
 
+import androidx.room.ColumnInfo
 import androidx.room.Entity
 import androidx.room.PrimaryKey
 import com.example.languagepartner.data.model.UserProgress
@@ -11,13 +12,25 @@ data class ProgressEntity(
     val streak: Int,
     val totalMessagesSent: Int,
     val grammarAccuracyScore: Int,
-    val lastActiveDate: String?
+    val lastActiveDate: String?,
+    @ColumnInfo(defaultValue = "10")
+    val dailyMessageGoal: Int = 10,
+    @ColumnInfo(defaultValue = "0")
+    val todayMessagesSent: Int = 0,
+    @ColumnInfo(defaultValue = "5")
+    val dailyVocabGoal: Int = 5,
+    @ColumnInfo(defaultValue = "0")
+    val todayVocabAdded: Int = 0
 ) {
     fun toDomain(): UserProgress = UserProgress(
         streak = streak,
         totalMessagesSent = totalMessagesSent,
         grammarAccuracyScore = grammarAccuracyScore,
-        lastActiveDate = lastActiveDate
+        lastActiveDate = lastActiveDate,
+        dailyMessageGoal = dailyMessageGoal,
+        todayMessagesSent = todayMessagesSent,
+        dailyVocabGoal = dailyVocabGoal,
+        todayVocabAdded = todayVocabAdded
     )
 
     companion object {
@@ -26,7 +39,11 @@ data class ProgressEntity(
             streak = progress.streak,
             totalMessagesSent = progress.totalMessagesSent,
             grammarAccuracyScore = progress.grammarAccuracyScore,
-            lastActiveDate = progress.lastActiveDate
+            lastActiveDate = progress.lastActiveDate,
+            dailyMessageGoal = progress.dailyMessageGoal,
+            todayMessagesSent = progress.todayMessagesSent,
+            dailyVocabGoal = progress.dailyVocabGoal,
+            todayVocabAdded = progress.todayVocabAdded
         )
     }
 }

@@ -37,6 +37,7 @@ import androidx.compose.material.icons.automirrored.filled.Send
 import androidx.compose.material.icons.automirrored.filled.VolumeUp
 import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.DeleteSweep
+import androidx.compose.material.icons.filled.FileDownload
 import androidx.compose.material.icons.filled.Mic
 import androidx.compose.material.icons.filled.Translate
 import androidx.compose.material.icons.filled.Warning
@@ -102,6 +103,7 @@ fun ChatScreen(
     onSetUserLevel: (String) -> Unit,
     onAddVocab: (String, String, String, String?) -> Unit,
     onClearChat: () -> Unit,
+    onExportChat: () -> Unit = {},
     modifier: Modifier = Modifier
 ) {
     val listState = rememberLazyListState()
@@ -191,16 +193,15 @@ fun ChatScreen(
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     Icon(
                         imageVector = Icons.AutoMirrored.Filled.VolumeUp,
-                        contentDescription = "Auto Speak",
+                        contentDescription = "النطق التلقائي",
                         tint = if (autoSpeak) BrandLime else TextSecondary,
                         modifier = Modifier.size(13.dp)
                     )
                     Spacer(modifier = Modifier.width(4.dp))
                     Text(
-                        text = "VOICE",
-                        fontSize = 9.sp,
+                        text = "الصوت",
+                        fontSize = 10.sp,
                         fontWeight = FontWeight.Bold,
-                        fontFamily = FontFamily.Monospace,
                         color = if (autoSpeak) BrandLime else TextSecondary
                     )
                 }
@@ -210,6 +211,12 @@ fun ChatScreen(
 
             // User Level Selector
             Box {
+                val levelDisplay = when (userLevel) {
+                    "Beginner" -> "مبتدئ"
+                    "Intermediate" -> "متوسط"
+                    "Advanced" -> "متقدم"
+                    else -> userLevel
+                }
                 Box(
                     modifier = Modifier
                         .clickable { levelMenuExpanded = true }
@@ -218,10 +225,9 @@ fun ChatScreen(
                         .padding(horizontal = 8.dp, vertical = 5.dp)
                 ) {
                     Text(
-                        text = userLevel.uppercase(),
-                        fontSize = 9.sp,
+                        text = levelDisplay,
+                        fontSize = 10.sp,
                         fontWeight = FontWeight.Bold,
-                        fontFamily = FontFamily.Monospace,
                         color = TextPrimary
                     )
                 }
@@ -231,13 +237,12 @@ fun ChatScreen(
                     onDismissRequest = { levelMenuExpanded = false },
                     modifier = Modifier.background(SurfaceDark)
                 ) {
-                    listOf("Beginner", "Intermediate", "Advanced").forEach { lvl ->
+                    listOf("Beginner" to "مبتدئ", "Intermediate" to "متوسط", "Advanced" to "متقدم").forEach { (lvl, title) ->
                         DropdownMenuItem(
                             text = {
                                 Text(
-                                    text = lvl,
+                                    text = title,
                                     color = if (lvl == userLevel) BrandLime else TextPrimary,
-                                    fontFamily = FontFamily.Monospace,
                                     fontSize = 12.sp
                                 )
                             },
@@ -253,12 +258,24 @@ fun ChatScreen(
             Spacer(modifier = Modifier.width(4.dp))
 
             IconButton(
+                onClick = onExportChat,
+                modifier = Modifier.size(32.dp)
+            ) {
+                Icon(
+                    imageVector = Icons.Default.FileDownload,
+                    contentDescription = "تصدير المحادثة كملف نصي",
+                    tint = BrandLime,
+                    modifier = Modifier.size(18.dp)
+                )
+            }
+
+            IconButton(
                 onClick = onClearChat,
                 modifier = Modifier.size(32.dp)
             ) {
                 Icon(
                     imageVector = Icons.Default.DeleteSweep,
-                    contentDescription = "Clear Chat",
+                    contentDescription = "مسح المحادثة",
                     tint = TextSecondary,
                     modifier = Modifier.size(18.dp)
                 )
@@ -286,10 +303,9 @@ fun ChatScreen(
                     Column(modifier = Modifier.padding(14.dp)) {
                         Row(verticalAlignment = Alignment.CenterVertically) {
                             Text(
-                                text = "NATIVE CONVERSATIONAL ENVIRONMENT",
+                                text = "بيئة محادثة مع ناطق أصلي",
                                 color = BrandLime,
-                                fontSize = 9.sp,
-                                fontFamily = FontFamily.Monospace,
+                                fontSize = 10.sp,
                                 fontWeight = FontWeight.Bold,
                                 letterSpacing = 1.sp
                             )
@@ -310,10 +326,9 @@ fun ChatScreen(
                                 .padding(horizontal = 8.dp, vertical = 3.dp)
                         ) {
                             Text(
-                                text = "💡 WORD TAP PRACTICE ENABLED: TAP ANY FOREIGN WORD TO SAVE",
+                                text = "💡 انقر على أي كلمة أثناء المحادثة لحفظها في المفردات",
                                 color = BrandLime,
-                                fontSize = 9.sp,
-                                fontFamily = FontFamily.Monospace,
+                                fontSize = 10.sp,
                                 fontWeight = FontWeight.Bold
                             )
                         }
@@ -351,9 +366,8 @@ fun ChatScreen(
                         )
                         Spacer(modifier = Modifier.width(10.dp))
                         Text(
-                            text = "${partner.name} is formulating a reply in ${partner.languageName}…",
+                            text = "${partner.name} يكتب رداً باللغة ${partner.languageName}…",
                             fontSize = 11.sp,
-                            fontFamily = FontFamily.Monospace,
                             color = TextSecondary
                         )
                     }
@@ -379,7 +393,7 @@ fun ChatScreen(
                     Box(
                         modifier = Modifier
                             .clickable {
-                                // Extract foreign text part before [English]
+                                // Extract foreign text part before [Arabic translation]
                                 val cleanText = suggestion.substringBefore("[").trim()
                                 onSendMessage(cleanText)
                             }
@@ -390,7 +404,6 @@ fun ChatScreen(
                         Text(
                             text = suggestion,
                             fontSize = 11.sp,
-                            fontFamily = FontFamily.Monospace,
                             color = TextPrimary
                         )
                     }
@@ -417,7 +430,7 @@ fun ChatScreen(
                                 RecognizerIntent.LANGUAGE_MODEL_FREE_FORM
                             )
                             putExtra(RecognizerIntent.EXTRA_LANGUAGE, partner.language)
-                            putExtra(RecognizerIntent.EXTRA_PROMPT, "Speak in ${partner.languageName}")
+                            putExtra(RecognizerIntent.EXTRA_PROMPT, "تحدث باللغة ${partner.languageName}")
                         }
                         speechLauncher.launch(intent)
                     } catch (e: Exception) {
@@ -432,7 +445,7 @@ fun ChatScreen(
             ) {
                 Icon(
                     imageVector = Icons.Default.Mic,
-                    contentDescription = "Speak",
+                    contentDescription = "تحدث",
                     tint = BrandLime,
                     modifier = Modifier.size(20.dp)
                 )
@@ -446,7 +459,7 @@ fun ChatScreen(
                 onValueChange = { inputText = it },
                 placeholder = {
                     Text(
-                        text = "Reply in ${partner.languageName}…",
+                        text = "اكتب باللغة ${partner.languageName}…",
                         color = TextSecondary,
                         fontSize = 13.sp
                     )
@@ -490,7 +503,7 @@ fun ChatScreen(
             ) {
                 Icon(
                     imageVector = Icons.AutoMirrored.Filled.Send,
-                    contentDescription = "Send",
+                    contentDescription = "إرسال",
                     tint = if (inputText.isNotBlank() && !isGenerating) Color.Black else TextSecondary,
                     modifier = Modifier.size(18.dp)
                 )
@@ -504,9 +517,8 @@ fun ChatScreen(
             onDismissRequest = { selectedWordForVocab = null },
             title = {
                 Text(
-                    text = "SAVE TO LEXICON",
+                    text = "حفظ الكلمة في المفردات",
                     fontSize = 14.sp,
-                    fontFamily = FontFamily.Monospace,
                     fontWeight = FontWeight.Bold,
                     color = BrandLime
                 )
@@ -520,7 +532,7 @@ fun ChatScreen(
                         color = TextPrimary
                     )
                     Text(
-                        text = "Context: $contextSentence",
+                        text = "السياق: $contextSentence",
                         fontSize = 11.sp,
                         color = TextSecondary,
                         lineHeight = 16.sp
@@ -528,8 +540,8 @@ fun ChatScreen(
                     OutlinedTextField(
                         value = customTranslation,
                         onValueChange = { customTranslation = it },
-                        label = { Text("English Translation") },
-                        placeholder = { Text("e.g., to explore / delicious") },
+                        label = { Text("الترجمة بالعربية") },
+                        placeholder = { Text("مثال: استكشاف / لذيذ") },
                         colors = OutlinedTextFieldDefaults.colors(
                             focusedBorderColor = BrandLime,
                             unfocusedBorderColor = BorderSubtle,
@@ -543,19 +555,19 @@ fun ChatScreen(
             confirmButton = {
                 Button(
                     onClick = {
-                        val trans = customTranslation.ifBlank { "Added from dialogue" }
+                        val trans = customTranslation.ifBlank { "تمت الإضافة من المحادثة" }
                         onAddVocab(word, trans, contextSentence, null)
                         selectedWordForVocab = null
                     },
                     colors = ButtonDefaults.buttonColors(containerColor = BrandLime, contentColor = Color.Black),
                     shape = RoundedCornerShape(0.dp)
                 ) {
-                    Text("SAVE WORD", fontWeight = FontWeight.Bold, fontFamily = FontFamily.Monospace)
+                    Text("حفظ الكلمة", fontWeight = FontWeight.Bold)
                 }
             },
             dismissButton = {
                 TextButton(onClick = { selectedWordForVocab = null }) {
-                    Text("CANCEL", color = TextSecondary, fontFamily = FontFamily.Monospace)
+                    Text("إلغاء", color = TextSecondary)
                 }
             },
             containerColor = SurfaceDark,
@@ -694,9 +706,8 @@ private fun MessageBubble(
                                 )
                                 Spacer(modifier = Modifier.width(4.dp))
                                 Text(
-                                    text = if (showTranslation) "HIDE TRANSLATION" else "SEE TRANSLATION",
-                                    fontSize = 9.sp,
-                                    fontFamily = FontFamily.Monospace,
+                                    text = if (showTranslation) "إخفاء الترجمة" else "عرض الترجمة",
+                                    fontSize = 10.sp,
                                     fontWeight = FontWeight.Bold,
                                     color = TextSecondary
                                 )
@@ -714,7 +725,7 @@ private fun MessageBubble(
                         ) {
                             Icon(
                                 imageVector = Icons.AutoMirrored.Filled.VolumeUp,
-                                contentDescription = "Play Audio",
+                                contentDescription = "تشغيل الصوت",
                                 tint = if (isPlayingAudio) BrandLime else TextSecondary,
                                 modifier = Modifier.size(16.dp)
                             )
@@ -751,10 +762,9 @@ private fun MessageBubble(
                         )
                         Spacer(modifier = Modifier.width(6.dp))
                         Text(
-                            text = if (!fb.grammarCorrect) "GRAMMAR CORRECTIVE FEEDBACK" else "PRISTINE SYNTAX",
+                            text = if (!fb.grammarCorrect) "ملاحظات نحوية وتصحيح" else "قواعد سليمة ودقيقة",
                             color = if (!fb.grammarCorrect) AccentAmber else BrandLime,
-                            fontSize = 9.sp,
-                            fontFamily = FontFamily.Monospace,
+                            fontSize = 10.sp,
                             fontWeight = FontWeight.Bold
                         )
                     }
@@ -762,14 +772,14 @@ private fun MessageBubble(
                     if (!fb.grammarCorrect && !fb.correctedText.isNullOrBlank()) {
                         Spacer(modifier = Modifier.height(6.dp))
                         Text(
-                            text = "Spoken: ${message.text}",
+                            text = "النص المدخل: ${message.text}",
                             fontSize = 11.sp,
                             color = TextSecondary,
                             textDecoration = TextDecoration.LineThrough
                         )
                         Spacer(modifier = Modifier.height(2.dp))
                         Text(
-                            text = "Recommended: ${fb.correctedText}",
+                            text = "التصحيح المقترح: ${fb.correctedText}",
                             fontSize = 12.sp,
                             fontWeight = FontWeight.Bold,
                             color = TextPrimary

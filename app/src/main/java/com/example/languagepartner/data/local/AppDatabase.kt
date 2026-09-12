@@ -11,7 +11,7 @@ import androidx.room.RoomDatabase
         ChatMessageEntity::class,
         ProgressEntity::class
     ],
-    version = 1,
+    version = 3,
     exportSchema = false
 )
 abstract class AppDatabase : RoomDatabase() {

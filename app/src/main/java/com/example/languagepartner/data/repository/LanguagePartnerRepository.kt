@@ -19,6 +19,7 @@ import com.example.languagepartner.data.remote.Part
 import com.example.languagepartner.data.remote.ResponseFormat
 import com.example.languagepartner.data.remote.ResponseFormatText
 import com.example.languagepartner.data.remote.RetrofitClient
+import com.example.languagepartner.data.firebase.FirestoreLanguagePartnerRepository
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
@@ -28,7 +29,11 @@ import java.util.Date
 import java.util.Locale
 import java.util.UUID
 
-class LanguagePartnerRepository(private val database: AppDatabase) {
+class LanguagePartnerRepository(
+    private val database: AppDatabase,
+    private val firestoreRepo: FirestoreLanguagePartnerRepository,
+    val userId: String
+) {
 
     private val vocabDao = database.vocabDao()
     private val chatDao = database.chatMessageDao()
@@ -44,10 +49,20 @@ class LanguagePartnerRepository(private val database: AppDatabase) {
     val userProgress: Flow<UserProgress> = progressDao.getProgress()
         .map { it?.toDomain() ?: UserProgress() }
 
+    fun observeFirestoreProgress(): Flow<UserProgress> =
+        firestoreRepo.observeUserProgress(userId)
+
+    fun observeFirestoreVocab(): Flow<List<VocabWord>> =
+        firestoreRepo.observeVocabWords(userId)
+
+    fun observeFirestoreMessages(partnerId: String): Flow<List<Message>> =
+        firestoreRepo.observeChatMessages(userId, partnerId)
+
     suspend fun addVocabWord(word: String, translation: String, languageName: String, context: String, notes: String? = null) {
         withContext(Dispatchers.IO) {
+            val id = UUID.randomUUID().toString()
             val entity = VocabEntity(
-                id = UUID.randomUUID().toString(),
+                id = id,
                 word = word.trim(),
                 translation = translation.trim(),
                 languageName = languageName,
@@ -56,24 +71,44 @@ class LanguagePartnerRepository(private val database: AppDatabase) {
                 createdAt = System.currentTimeMillis()
             )
             vocabDao.insertVocabWord(entity)
+            try {
+                firestoreRepo.addVocabWord(userId, id, word, translation, languageName, context, notes)
+            } catch (e: Exception) {
+                // Handled in FirestoreLanguagePartnerRepository
+            }
         }
     }
 
     suspend fun removeVocabWord(id: String) {
         withContext(Dispatchers.IO) {
             vocabDao.deleteVocabWord(id)
+            try {
+                firestoreRepo.removeVocabWord(userId, id)
+            } catch (e: Exception) {
+                // Handled in FirestoreLanguagePartnerRepository
+            }
         }
     }
 
     suspend fun saveMessage(partnerId: String, message: Message) {
         withContext(Dispatchers.IO) {
             chatDao.insertMessage(ChatMessageEntity.fromDomain(partnerId, message))
+            try {
+                firestoreRepo.saveChatMessage(userId, partnerId, message)
+            } catch (e: Exception) {
+                // Handled in FirestoreLanguagePartnerRepository
+            }
         }
     }
 
     suspend fun clearHistoryForPartner(partnerId: String) {
         withContext(Dispatchers.IO) {
             chatDao.clearMessagesForPartner(partnerId)
+            try {
+                firestoreRepo.clearChatMessages(userId, partnerId)
+            } catch (e: Exception) {
+                // Handled in FirestoreLanguagePartnerRepository
+            }
         }
     }
 
@@ -83,19 +118,41 @@ class LanguagePartnerRepository(private val database: AppDatabase) {
             val today = dateFormat.format(Date())
 
             val current = progressDao.getProgress()
-            // We can read once directly or calculate
             val currentEntity = database.runInTransaction<ProgressEntity?> {
-                // In-memory update
                 null
             }
-            // Simple default handling
         }
     }
 
     suspend fun saveProgress(progress: UserProgress) {
         withContext(Dispatchers.IO) {
             progressDao.saveProgress(ProgressEntity.fromDomain(progress))
+            try {
+                firestoreRepo.saveUserProgress(userId, progress)
+            } catch (e: Exception) {
+                // Handled in FirestoreLanguagePartnerRepository
+            }
         }
+    }
+
+    suspend fun countTodayUserMessages(): Int = withContext(Dispatchers.IO) {
+        val calendar = java.util.Calendar.getInstance().apply {
+            set(java.util.Calendar.HOUR_OF_DAY, 0)
+            set(java.util.Calendar.MINUTE, 0)
+            set(java.util.Calendar.SECOND, 0)
+            set(java.util.Calendar.MILLISECOND, 0)
+        }
+        chatDao.countUserMessagesSince(calendar.timeInMillis)
+    }
+
+    suspend fun countTodayVocabWords(): Int = withContext(Dispatchers.IO) {
+        val calendar = java.util.Calendar.getInstance().apply {
+            set(java.util.Calendar.HOUR_OF_DAY, 0)
+            set(java.util.Calendar.MINUTE, 0)
+            set(java.util.Calendar.SECOND, 0)
+            set(java.util.Calendar.MILLISECOND, 0)
+        }
+        vocabDao.countVocabWordsSince(calendar.timeInMillis)
     }
 
     suspend fun sendChatMessage(
@@ -119,28 +176,28 @@ Current conversation topic of focus: $currentTopic
 
 CRITICAL GUIDELINES:
 1. Stay in character as ${partner.name}. Respond casually and naturally as a native speaker of ${partner.languageName}. Keep your responses simple and matching the learner's expertise level ($userLevel).
-2. Provide a polite and authentic native language response.
-3. Translate your own native response into clear English.
+2. Provide a polite and authentic native language response in 'replyText'.
+3. CRITICAL: The user's primary application interface is Arabic (العربية). You MUST translate your native response into natural, fluent Arabic (العربية) in 'translation'.
 4. For Asian/Cyrillic languages or languages with different scripts, provide a pronunciation hint or transliteration (e.g., Romaji for Japanese, Pinyin for Chinese).
 5. Crucially, analyze the user's last message:
    - Check if their message fits typical patterns and grammar rules in ${partner.languageName}.
-   - If they made typos, grammar, or word-choice errors, set "grammarCorrect" to false, give a corrected version in "correctedText", and a friendly explanation in "explanation" in English.
-   - If they wrote correctly, set "grammarCorrect" to true.
-   - List 2-3 vocabulary words used in this turnaround with brief definition cards in "vocabularyNotes".
-6. Formulate 3 relevant suggestion shortcuts in ${partner.languageName} that the user could click to reply easily (e.g., positive answer, question back, divert topic). Include an English translation for each suggestion inside brackets.
+   - If they made typos, grammar, or word-choice errors, set "grammarCorrect" to false, give a corrected version in "correctedText", and a friendly explanation in Arabic (العربية) in "explanation".
+   - If they wrote correctly, set "grammarCorrect" to true, and give a brief positive affirmation in Arabic in "explanation".
+   - List 2-3 vocabulary words used in this turnaround with brief definition cards in Arabic in "vocabularyNotes".
+6. Formulate 3 relevant suggestion shortcuts in ${partner.languageName} that the user could click to reply easily (e.g., positive answer, question back, divert topic). Include an Arabic translation for each suggestion inside brackets, e.g.: "phrase in target [المعنى بالعربية]".
 
 You MUST respond strictly using valid JSON with this structure:
 {
-  "replyText": "native response",
-  "translation": "English translation",
+  "replyText": "native response in target language",
+  "translation": "الترجمة الدقيقة باللغة العربية",
   "pronunciationHint": "transliteration if needed",
   "feedback": {
     "grammarCorrect": true/false,
     "correctedText": "optional corrected user message",
-    "explanation": "friendly explanation if corrected",
-    "vocabularyNotes": [{"word": "word", "translation": "translation", "note": "context"}]
+    "explanation": "شرح نحوي ودود باللغة العربية",
+    "vocabularyNotes": [{"word": "word", "translation": "الترجمة بالعربية", "note": "ملاحظة"}]
   },
-  "suggestedReplies": ["phrase in target [English meaning]"]
+  "suggestedReplies": ["phrase in target [المعنى بالعربية]"]
 }
 """.trimIndent()
 
@@ -210,33 +267,33 @@ You MUST respond strictly using valid JSON with this structure:
         val (reply, translation, hint, suggestions) = when (partner.id) {
             "elena" -> Quadruple(
                 "¡Muy bien dicho! Me encanta que practiquemos juntos. ¿Qué te parece si hablamos sobre la comida de Sevilla?",
-                "Very well said! I love that we are practicing together. What do you think if we talk about Seville's food?",
+                "أحسنت القول! يسعدني جداً أن نتدرب سوياً. ما رأيك أن نتحدث عن أطعمة إشبيلية اللذيذة؟",
                 null,
-                listOf("¡Me encanta la comida! [I love the food!]", "¿Cuál es tu plato favorito? [What is your favorite dish?]", "Prefiero hablar de música [I prefer talking about music]")
+                listOf("¡Me encanta la comida! [أعشق الطعام!]", "¿Cuál es tu plato favorito? [ما هو طبقك المفضل؟]", "Prefiero hablar de música [أفضل التحدث عن الموسيقى]")
             )
             "marie" -> Quadruple(
                 "C'est merveilleux ! Votre accent est charmant. Aimeriez-vous explorer les galeries d'art parisiennes ?",
-                "That's wonderful! Your accent is charming. Would you like to explore Parisian art galleries?",
+                "هذا رائع! نبرتك جميلة وواضحة. هل ترغب في استكشاف صالات الفنون في باريس؟",
                 null,
-                listOf("Oui, avec grand plaisir ! [Yes, with great pleasure!]", "Quel est votre musée préféré ? [What is your favorite museum?]", "Parlons plutôt de cinéma [Let's talk about cinema instead]")
+                listOf("Oui, avec grand plaisir ! [نعم، بكل سرور!]", "Quel est votre musée préféré ? [ما هو متحفك المفضل؟]", "Parlons plutôt de cinéma [دعنا نتحدث عن السينما]")
             )
             "yuki" -> Quadruple(
                 "素晴らしいですね！日本語のお話しがとても上手です。京都の抹茶を飲んだことはありますか？",
-                "Wonderful! Your Japanese speaking is very good. Have you ever drank Kyoto matcha tea?",
+                "رائع جداً! تحدثك باللغة اليابانية ممتاز. هل جربت شرب شاي الماتشا في كيوتو من قبل؟",
                 "Subarashii desu ne! Nihongo no ohanashi ga totemo jouzu desu.",
-                listOf("はい、大好きです！ [Yes, I love it!]", "いいえ、まだです [No, not yet]", "おすすめのお茶は？ [What tea do you recommend?]")
+                listOf("はい、大好きです！ [نعم، أحبه كثيراً!]", "いいえ、まだです [لا، ليس بعد]", "おすすめのお茶は？ [ما هو الشاي الذي تنصحين به؟]")
             )
             "lucas" -> Quadruple(
                 "Ausgezeichnet! Deine Aussprache klingt schon sehr flüssig. Fährst du in deiner Freizeit auch gerne Fahrrad?",
-                "Excellent! Your pronunciation already sounds very fluent. Do you also like cycling in your free time?",
+                "ممتاز! نطقك يبدو طليقاً وسلساً. هل تحب ركوب الدراجات في وقت فراغك أيضاً؟",
                 null,
-                listOf("Ja, fast jeden Tag! [Yes, almost every day!]", "Nicht so oft [Not so often]", "Ich gehe lieber wandern [I prefer going hiking]")
+                listOf("Ja, fast jeden Tag! [نعم، كل يوم تقريباً!]", "Nicht so oft [ليس كثيراً]", "Ich gehe lieber wandern [أفضل الذهاب للتنزه]")
             )
             else -> Quadruple(
                 "Fantastico! Stai facendo ottimi progressi. Che cosa ti piacerebbe visitare in Italia?",
-                "Fantastic! You are making great progress. What would you like to visit in Italy?",
+                "رائع! أنت تحرز تقدماً ملحوظاً. ماذا تحب أن تزور في إيطاليا؟",
                 null,
-                listOf("Vorrei visitare Roma [I would like to visit Rome]", "Amo la moda italiana [I love Italian fashion]", "Parlami di Milano [Tell me about Milan]")
+                listOf("Vorrei visitare Roma [أود زيارة روما]", "Amo la moda italiana [أعشق الموضة الإيطالية]", "Parlami di Milano [حدثيني عن ميلانو]")
             )
         }
 
@@ -248,7 +305,7 @@ You MUST respond strictly using valid JSON with this structure:
             pronunciationHint = hint,
             feedback = Feedback(
                 grammarCorrect = true,
-                explanation = "Your sentence composition was natural and expressive."
+                explanation = "تركيب جملتك سليم وممتاز ومعبر."
             ),
             suggestedReplies = suggestions,
             timestamp = System.currentTimeMillis()

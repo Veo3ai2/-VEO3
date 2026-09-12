@@ -5,6 +5,7 @@ plugins {
     alias(libs.plugins.kotlin.serialization)
     alias(libs.plugins.ksp)
     alias(libs.plugins.secrets)
+    alias(libs.plugins.google.services)
 }
 
 android {
@@ -12,7 +13,7 @@ android {
     compileSdk = 36
 
     defaultConfig {
-        applicationId = "com.aistudio.languagepartner.qvnjzk"
+        applicationId = "com.example.languagepartner"
         minSdk = 26
         targetSdk = 36
         versionCode = 1
@@ -89,6 +90,14 @@ dependencies {
 
     // Image loading
     implementation(libs.coil.compose)
+
+    // Firebase & Auth
+    implementation(platform(libs.firebase.bom))
+    implementation(libs.firebase.firestore)
+    implementation(libs.firebase.auth)
+    implementation(libs.androidx.credentials)
+    implementation(libs.androidx.credentials.play.services)
+    implementation(libs.googleid)
 
     debugImplementation(libs.androidx.ui.tooling)
 }

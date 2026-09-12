@@ -1,15 +1,20 @@
 <resources>
-    <string name="app_name">Language Partner</string>
-    <string name="partner_catalog">Partner Catalog</string>
-    <string name="select_partner">Select Your Conversational Partner</string>
-    <string name="chat_tab">Chat</string>
-    <string name="partners_tab">Partners</string>
-    <string name="vocab_tab">Vocab</string>
-    <string name="stats_tab">Stats</string>
-    <string name="word_tap_practice">Word Tap Practice Enabled</string>
-    <string name="type_message_hint">Reply in target language…</string>
-    <string name="send">Send</string>
-    <string name="auto_speak">Auto-Speak</string>
-    <string name="flashcard_lexicon">Flashcard Lexicon</string>
-    <string name="fluency_metrics">Your Fluency Metrics</string>
+    <string name="app_name">رفيق اللغة</string>
+    <string name="partner_catalog">دليل الشركاء</string>
+    <string name="select_partner">اختر شريك المحادثة</string>
+    <string name="chat_tab">المحادثة</string>
+    <string name="partners_tab">الشركاء</string>
+    <string name="vocab_tab">المفردات</string>
+    <string name="stats_tab">الإحصائيات</string>
+    <string name="word_tap_practice">حفظ الكلمات باللمس مفعّل</string>
+    <string name="type_message_hint">اكتب باللغة المستهدفة…</string>
+    <string name="send">إرسال</string>
+    <string name="auto_speak">النطق التلقائي</string>
+    <string name="flashcard_lexicon">معجم المفردات</string>
+    <string name="fluency_metrics">مقاييس الطلاقة اللغوية</string>
+    <string name="linguistic_stats">الإحصائيات اللغوية</string>
+    <string name="daily_message_goal">هدف المحادثة اليومي</string>
+    <string name="daily_vocab_goal">هدف المفردات اليومي</string>
+    <string name="set_goal">تحديد الهدف</string>
+    <string name="set_vocab_goal">تحديد هدف المفردات</string>
 </resources>

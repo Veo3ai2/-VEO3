@@ -1,0 +1,70 @@
+{
+  "entities": {
+    "UserProfile": {
+      "title": "UserProfile",
+      "description": "User progress, daily message target, and fluency metrics",
+      "type": "object",
+      "properties": {
+        "userId": { "type": "string", "description": "Owner authenticated user UID" },
+        "streak": { "type": "integer", "description": "Consecutive days active" },
+        "totalMessagesSent": { "type": "integer", "description": "Lifetime total dialogues sent" },
+        "grammarAccuracyScore": { "type": "integer", "description": "Grammatical precision percentage (0-100)" },
+        "lastActiveDate": { "type": "string", "description": "Date string format YYYY-MM-DD" },
+        "dailyMessageGoal": { "type": "integer", "description": "Daily dialogue message target" },
+        "todayMessagesSent": { "type": "integer", "description": "Messages sent in current day" },
+        "dailyVocabGoal": { "type": "integer", "description": "Daily vocabulary learning target" },
+        "todayVocabAdded": { "type": "integer", "description": "Vocabulary items saved today" },
+        "createdAt": { "type": "string", "format": "date-time", "description": "Creation timestamp via serverTimestamp" },
+        "updatedAt": { "type": "string", "format": "date-time", "description": "Update timestamp via serverTimestamp" }
+      },
+      "required": ["userId", "streak", "totalMessagesSent", "grammarAccuracyScore", "dailyMessageGoal", "todayMessagesSent"]
+    },
+    "VocabItem": {
+      "title": "VocabItem",
+      "description": "User saved lexicon vocabulary word",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "description": "Unique identifier" },
+        "userId": { "type": "string", "description": "Owner user UID" },
+        "word": { "type": "string", "description": "Target language word or phrase" },
+        "translation": { "type": "string", "description": "Translation in native language" },
+        "languageName": { "type": "string", "description": "Name of language" },
+        "context": { "type": "string", "description": "Sample contextual sentence" },
+        "notes": { "type": "string", "description": "Optional grammatical or mnemonic notes" },
+        "createdAt": { "type": "string", "format": "date-time", "description": "Creation timestamp via serverTimestamp" }
+      },
+      "required": ["id", "userId", "word", "translation", "languageName", "context"]
+    },
+    "ChatMessage": {
+      "title": "ChatMessage",
+      "description": "Dialogue message between user and AI language partner",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "description": "Message UUID" },
+        "userId": { "type": "string", "description": "Owner user UID" },
+        "partnerId": { "type": "string", "description": "Partner ID persona" },
+        "role": { "type": "string", "description": "Speaker role", "enum": ["user", "partner"] },
+        "text": { "type": "string", "description": "Message textual content" },
+        "grammarCorrect": { "type": "boolean", "description": "Whether grammar was correct" },
+        "correctedText": { "type": "string", "description": "Corrected sentence text" },
+        "explanation": { "type": "string", "description": "Pedagogical explanation of revision" },
+        "createdAt": { "type": "string", "format": "date-time", "description": "Timestamp via serverTimestamp" }
+      },
+      "required": ["id", "userId", "partnerId", "role", "text"]
+    }
+  },
+  "firestore": {
+    "/users/{userId}": {
+      "schema": "UserProfile",
+      "description": "User progress, daily dialogue target, and fluency metrics"
+    },
+    "/users/{userId}/vocab/{vocabId}": {
+      "schema": "VocabItem",
+      "description": "Lexicon vocabulary words saved by user"
+    },
+    "/users/{userId}/chat_messages/{messageId}": {
+      "schema": "ChatMessage",
+      "description": "Turnaround messages and feedback logs in dialogue exchanges"
+    }
+  }
+}

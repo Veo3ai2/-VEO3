@@ -24,6 +24,7 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.VolumeUp
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Flip
@@ -69,12 +70,20 @@ fun VocabBuilderScreen(
     vocabulary: List<VocabWord>,
     onAddWord: (word: String, translation: String, languageName: String, context: String, notes: String?) -> Unit,
     onDeleteWord: (id: String) -> Unit,
+    onSpeakWord: (word: String, languageName: String) -> Unit = { _, _ -> },
     modifier: Modifier = Modifier
 ) {
     var selectedLanguageFilter by remember { mutableStateOf("All") }
     var showAddDialog by remember { mutableStateOf(false) }
 
-    val languages = listOf("All", "Spanish", "French", "Japanese", "German", "Italian")
+    val languageFilters = listOf(
+        "All" to "الكل",
+        "Spanish" to "الإسبانية",
+        "French" to "الفرنسية",
+        "Japanese" to "اليابانية",
+        "German" to "الألمانية",
+        "Italian" to "الإيطالية"
+    )
     val filteredList = if (selectedLanguageFilter == "All") {
         vocabulary
     } else {
@@ -106,25 +115,23 @@ fun VocabBuilderScreen(
                                 .padding(horizontal = 8.dp, vertical = 4.dp)
                         ) {
                             Text(
-                                text = "VOCAB",
+                                text = "المفردات",
                                 color = Color.Black,
                                 fontSize = 11.sp,
-                                fontWeight = FontWeight.Black,
-                                fontFamily = FontFamily.Monospace
+                                fontWeight = FontWeight.Black
                             )
                         }
                         Spacer(modifier = Modifier.width(12.dp))
                         Column {
                             Text(
-                                text = "FLASHCARD LEXICON",
+                                text = "بطاقات الاستذكار",
                                 color = BrandLime,
-                                fontSize = 10.sp,
+                                fontSize = 11.sp,
                                 fontWeight = FontWeight.Bold,
-                                fontFamily = FontFamily.Monospace,
-                                letterSpacing = 2.sp
+                                letterSpacing = 1.sp
                             )
                             Text(
-                                text = "Captured Vocabulary",
+                                text = "المفردات المحفوظة",
                                 color = TextPrimary,
                                 fontSize = 18.sp,
                                 fontWeight = FontWeight.Black
@@ -139,10 +146,9 @@ fun VocabBuilderScreen(
                             .padding(horizontal = 8.dp, vertical = 4.dp)
                     ) {
                         Text(
-                            text = "${vocabulary.size} TERMS",
+                            text = "${vocabulary.size} كلمات",
                             color = BrandLime,
-                            fontSize = 10.sp,
-                            fontFamily = FontFamily.Monospace,
+                            fontSize = 11.sp,
                             fontWeight = FontWeight.Bold
                         )
                     }
@@ -156,19 +162,18 @@ fun VocabBuilderScreen(
                     verticalArrangement = Arrangement.spacedBy(6.dp),
                     modifier = Modifier.fillMaxWidth()
                 ) {
-                    languages.forEach { lang ->
-                        val isSelected = lang == selectedLanguageFilter
+                    languageFilters.forEach { (langKey, langLabel) ->
+                        val isSelected = langKey == selectedLanguageFilter
                         Box(
                             modifier = Modifier
-                                .clickable { selectedLanguageFilter = lang }
+                                .clickable { selectedLanguageFilter = langKey }
                                 .background(if (isSelected) BrandLime else SurfaceElevated)
                                 .border(1.dp, if (isSelected) BrandLime else BorderSubtle)
                                 .padding(horizontal = 10.dp, vertical = 5.dp)
                         ) {
                             Text(
-                                text = lang.uppercase(),
-                                fontSize = 10.sp,
-                                fontFamily = FontFamily.Monospace,
+                                text = langLabel,
+                                fontSize = 11.sp,
                                 fontWeight = FontWeight.Bold,
                                 color = if (isSelected) Color.Black else TextSecondary
                             )
@@ -192,19 +197,17 @@ fun VocabBuilderScreen(
                             modifier = Modifier.padding(24.dp)
                         ) {
                             Text(
-                                text = "LEXICON EMPTY",
+                                text = "سجل المفردات فارغ",
                                 color = BrandLime,
-                                fontSize = 13.sp,
-                                fontFamily = FontFamily.Monospace,
-                                fontWeight = FontWeight.Bold,
-                                letterSpacing = 2.sp
+                                fontSize = 15.sp,
+                                fontWeight = FontWeight.Bold
                             )
                             Spacer(modifier = Modifier.height(6.dp))
                             Text(
-                                text = "No vocabulary items captured yet. Tap any word during active chat or click the + button to add one manually.",
+                                text = "لم يتم حفظ أي مفردات بعد. انقر على أي كلمة أثناء المحادثة أو اضغط على زر + لإضافتها يدوياً.",
                                 color = TextSecondary,
                                 fontSize = 12.sp,
-                                lineHeight = 18.sp,
+                                lineHeight = 20.sp,
                                 modifier = Modifier.padding(horizontal = 8.dp)
                             )
                         }
@@ -214,7 +217,8 @@ fun VocabBuilderScreen(
                 items(filteredList, key = { it.id }) { vocabWord ->
                     VocabFlashcard(
                         vocabWord = vocabWord,
-                        onDelete = { onDeleteWord(vocabWord.id) }
+                        onDelete = { onDeleteWord(vocabWord.id) },
+                        onSpeak = { onSpeakWord(vocabWord.word, vocabWord.languageName) }
                     )
                 }
             }
@@ -235,23 +239,22 @@ fun VocabBuilderScreen(
                 .padding(20.dp)
                 .testTag("add_vocab_fab")
         ) {
-            Icon(Icons.Default.Add, contentDescription = "Add Vocabulary")
+            Icon(Icons.Default.Add, contentDescription = "إضافة مفردة")
         }
     }
 
     if (showAddDialog) {
         var wordInput by remember { mutableStateOf("") }
         var translationInput by remember { mutableStateOf("") }
-        var languageInput by remember { mutableStateOf(if (selectedLanguageFilter != "All") selectedLanguageFilter else "Spanish") }
+        var languageInput by remember { mutableStateOf(if (selectedLanguageFilter != "All") selectedLanguageFilter else "الإسبانية") }
         var contextInput by remember { mutableStateOf("") }
 
         AlertDialog(
             onDismissRequest = { showAddDialog = false },
             title = {
                 Text(
-                    text = "MANUAL LEXICON ENTRY",
-                    fontSize = 13.sp,
-                    fontFamily = FontFamily.Monospace,
+                    text = "إضافة مفردة يدوياً",
+                    fontSize = 14.sp,
                     fontWeight = FontWeight.Bold,
                     color = BrandLime
                 )
@@ -261,7 +264,7 @@ fun VocabBuilderScreen(
                     OutlinedTextField(
                         value = wordInput,
                         onValueChange = { wordInput = it },
-                        label = { Text("Word / Phrase") },
+                        label = { Text("الكلمة / العبارة") },
                         colors = OutlinedTextFieldDefaults.colors(
                             focusedBorderColor = BrandLime,
                             unfocusedBorderColor = BorderSubtle,
@@ -273,7 +276,7 @@ fun VocabBuilderScreen(
                     OutlinedTextField(
                         value = translationInput,
                         onValueChange = { translationInput = it },
-                        label = { Text("English Translation") },
+                        label = { Text("المعنى بالعربية") },
                         colors = OutlinedTextFieldDefaults.colors(
                             focusedBorderColor = BrandLime,
                             unfocusedBorderColor = BorderSubtle,
@@ -285,7 +288,7 @@ fun VocabBuilderScreen(
                     OutlinedTextField(
                         value = languageInput,
                         onValueChange = { languageInput = it },
-                        label = { Text("Language (e.g. Spanish, French)") },
+                        label = { Text("اللغة (مثال: الإسبانية، الفرنسية)") },
                         colors = OutlinedTextFieldDefaults.colors(
                             focusedBorderColor = BrandLime,
                             unfocusedBorderColor = BorderSubtle,
@@ -297,7 +300,7 @@ fun VocabBuilderScreen(
                     OutlinedTextField(
                         value = contextInput,
                         onValueChange = { contextInput = it },
-                        label = { Text("Example Context Sentence") },
+                        label = { Text("جملة توضيحية في السياق") },
                         colors = OutlinedTextFieldDefaults.colors(
                             focusedBorderColor = BrandLime,
                             unfocusedBorderColor = BorderSubtle,
@@ -325,12 +328,12 @@ fun VocabBuilderScreen(
                     colors = ButtonDefaults.buttonColors(containerColor = BrandLime, contentColor = Color.Black),
                     shape = RoundedCornerShape(0.dp)
                 ) {
-                    Text("ADD TERM", fontWeight = FontWeight.Bold, fontFamily = FontFamily.Monospace)
+                    Text("إضافة", fontWeight = FontWeight.Bold)
                 }
             },
             dismissButton = {
                 TextButton(onClick = { showAddDialog = false }) {
-                    Text("CANCEL", color = TextSecondary, fontFamily = FontFamily.Monospace)
+                    Text("إلغاء", color = TextSecondary)
                 }
             },
             containerColor = SurfaceDark,
@@ -342,7 +345,8 @@ fun VocabBuilderScreen(
 @Composable
 fun VocabFlashcard(
     vocabWord: VocabWord,
-    onDelete: () -> Unit
+    onDelete: () -> Unit,
+    onSpeak: () -> Unit = {}
 ) {
     var isFlipped by remember { mutableStateOf(false) }
     val rotation by animateFloatAsState(
@@ -380,16 +384,15 @@ fun VocabFlashcard(
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     Text(
-                        text = "ENGLISH DEFINITION",
+                        text = "المعنى باللغة العربية",
                         color = Color.Black,
-                        fontSize = 9.sp,
+                        fontSize = 11.sp,
                         fontWeight = FontWeight.Black,
-                        fontFamily = FontFamily.Monospace,
                         letterSpacing = 1.sp
                     )
                     Icon(
                         imageVector = Icons.Default.Flip,
-                        contentDescription = "Flip Back",
+                        contentDescription = "قلب البطاقة",
                         tint = Color.Black.copy(alpha = 0.6f),
                         modifier = Modifier.size(16.dp)
                     )
@@ -417,10 +420,9 @@ fun VocabFlashcard(
                 Spacer(modifier = Modifier.height(14.dp))
 
                 Text(
-                    text = "TAP TO FLIP BACK",
-                    color = Color.Black.copy(alpha = 0.6f),
-                    fontSize = 9.sp,
-                    fontFamily = FontFamily.Monospace,
+                    text = "انقر للعودة إلى الوجه الأول",
+                    color = Color.Black.copy(alpha = 0.7f),
+                    fontSize = 10.sp,
                     fontWeight = FontWeight.Bold
                 )
             }
@@ -451,16 +453,30 @@ fun VocabFlashcard(
                         )
                     }
 
-                    IconButton(
-                        onClick = onDelete,
-                        modifier = Modifier.size(24.dp)
-                    ) {
-                        Icon(
-                            imageVector = Icons.Default.Delete,
-                            contentDescription = "Delete Word",
-                            tint = TextSecondary,
-                            modifier = Modifier.size(15.dp)
-                        )
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        IconButton(
+                            onClick = onSpeak,
+                            modifier = Modifier.size(28.dp)
+                        ) {
+                            Icon(
+                                imageVector = Icons.AutoMirrored.Filled.VolumeUp,
+                                contentDescription = "استماع لنطق الكلمة",
+                                tint = BrandLime,
+                                modifier = Modifier.size(17.dp)
+                            )
+                        }
+                        Spacer(modifier = Modifier.width(4.dp))
+                        IconButton(
+                            onClick = onDelete,
+                            modifier = Modifier.size(28.dp)
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.Delete,
+                                contentDescription = "حذف الكلمة",
+                                tint = TextSecondary,
+                                modifier = Modifier.size(15.dp)
+                            )
+                        }
                     }
                 }
 
@@ -476,7 +492,7 @@ fun VocabFlashcard(
                 if (vocabWord.contextSentence.isNotBlank()) {
                     Spacer(modifier = Modifier.height(8.dp))
                     Text(
-                        text = "Context: \"${vocabWord.contextSentence}\"",
+                        text = "السياق: \"${vocabWord.contextSentence}\"",
                         color = TextSecondary,
                         fontSize = 12.sp,
                         lineHeight = 17.sp
@@ -496,10 +512,9 @@ fun VocabFlashcard(
                         modifier = Modifier.size(12.dp)
                     )
                     Text(
-                        text = "TAP TO REVEAL DEFINITION",
+                        text = "انقر لعرض الترجمة والمعنى",
                         color = BrandLime,
-                        fontSize = 9.sp,
-                        fontFamily = FontFamily.Monospace,
+                        fontSize = 11.sp,
                         fontWeight = FontWeight.Bold
                     )
                 }

@@ -16,6 +16,9 @@ interface VocabDao {
 
     @Query("DELETE FROM vocab_words WHERE id = :id")
     suspend fun deleteVocabWord(id: String)
+
+    @Query("SELECT COUNT(*) FROM vocab_words WHERE createdAt >= :sinceTimestamp")
+    suspend fun countVocabWordsSince(sinceTimestamp: Long): Int
 }
 
 @Dao
@@ -28,6 +31,9 @@ interface ChatMessageDao {
 
     @Query("DELETE FROM chat_messages WHERE partnerId = :partnerId")
     suspend fun clearMessagesForPartner(partnerId: String)
+
+    @Query("SELECT COUNT(*) FROM chat_messages WHERE role = 'user' AND timestamp >= :sinceTimestamp")
+    suspend fun countUserMessagesSince(sinceTimestamp: Long): Int
 }
 
 @Dao
