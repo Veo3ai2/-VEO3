@@ -1,0 +1,9 @@
+<resources>
+    <color name="brand_black">#0A0B0E</color>
+    <color name="brand_lime">#D4FF00</color>
+    <color name="surface_dark">#14161D</color>
+    <color name="surface_elevated">#1E212B</color>
+    <color name="border_subtle">#33FFFFFF</color>
+    <color name="text_primary">#FFFFFF</color>
+    <color name="text_secondary">#9EA3AE</color>
+</resources>
