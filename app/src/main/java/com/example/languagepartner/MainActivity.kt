@@ -380,12 +380,16 @@ fun LanguagePartnerMainApp(
                                         stringBuilder.append(msg.text)
                                         stringBuilder.append("\n")
 
-                                        if (!msg.arabicTranslation.isNullOrBlank()) {
-                                            stringBuilder.append("الترجمة العربية: ${msg.arabicTranslation}\n")
+                                        if (!msg.translation.isNullOrBlank()) {
+                                            stringBuilder.append("الترجمة: ${msg.translation}\n")
                                         }
                                         if (msg.feedback != null) {
-                                            stringBuilder.append("تصحيح القواعد: ${msg.feedback.correction}\n")
-                                            stringBuilder.append("الشرح: ${msg.feedback.explanationArabic}\n")
+                                            if (!msg.feedback.correctedText.isNullOrBlank()) {
+                                                stringBuilder.append("تصحيح القواعد: ${msg.feedback.correctedText}\n")
+                                            }
+                                            if (!msg.feedback.explanation.isNullOrBlank()) {
+                                                stringBuilder.append("الشرح: ${msg.feedback.explanation}\n")
+                                            }
                                         }
                                         stringBuilder.append("----------------------------------------\n\n")
                                     }
